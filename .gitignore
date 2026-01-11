@@ -76,3 +76,4 @@ $RECYCLE.BIN/
 
 # ZSH-Manager
 .last-update-check
+*.zwc

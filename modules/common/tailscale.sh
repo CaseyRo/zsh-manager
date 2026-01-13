@@ -6,13 +6,9 @@
 # ============================================================================
 
 _zsh_manager_tailscale_check() {
-    # Skip if tailscale isn't installed
+    # Skip if tailscale CLI isn't available
+    # On macOS, the CLI is optional (users can use the menu bar app instead)
     if ! command -v tailscale &>/dev/null; then
-        # On macOS, check if app is installed but CLI not enabled
-        if [[ "$OSTYPE" == "darwin"* ]] && [[ -d "/Applications/Tailscale.app" ]]; then
-            echo "\033[0;33m[tailscale]\033[0m Tailscale app installed but CLI not enabled."
-            echo "           Open Tailscale from menu bar → Settings → Enable CLI"
-        fi
         return 0
     fi
 

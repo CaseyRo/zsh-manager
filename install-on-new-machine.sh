@@ -37,6 +37,7 @@ source "$INSTALL_DIR/nvm.sh"
 source "$INSTALL_DIR/oh-my-zsh.sh"
 source "$INSTALL_DIR/tailscale.sh"
 source "$INSTALL_DIR/copyparty.sh"
+source "$INSTALL_DIR/nerd-fonts.sh"
 
 # ============================================================================
 # Main Installation
@@ -80,6 +81,7 @@ main() {
     echo -e "  ${SYMBOL_BULLET} Oh My Zsh + plugins"
     echo -e "  ${SYMBOL_BULLET} Tailscale (VPN mesh network)"
     echo -e "  ${SYMBOL_BULLET} Copyparty (portable file server)"
+    echo -e "  ${SYMBOL_BULLET} Nerd Fonts (terminal glyphs for prompts)"
     echo -e "  ${SYMBOL_BULLET} ZSH-Manager configuration"
     echo ""
     echo -e "  ${DIM}Safe to re-run - already installed items will be skipped.${RESET}"
@@ -110,13 +112,13 @@ main() {
     fi
 
     # Calculate step count based on platform
-    # Base: 10 steps (rust, nvm, node, npm, omz, plugins, tailscale, copyparty, symlink, done)
-    # APT: +3 (apt repos, apt packages, docker) = 13
-    # Brew macOS: +3 (brew, packages, casks) = 13
-    # Brew Linux: +4 (brew, packages, casks, docker) = 14
-    local STEP_COUNT=13
+    # Base: 11 steps (rust, nvm, node, npm, omz, plugins, tailscale, copyparty, nerd-fonts, symlink, done)
+    # APT: +3 (apt repos, apt packages, docker) = 14
+    # Brew macOS: +3 (brew, packages, casks) = 14
+    # Brew Linux: +4 (brew, packages, casks, docker) = 15
+    local STEP_COUNT=14
     if [[ "$IS_MACOS" == false ]] && [[ "$USE_APT" == false ]]; then
-        STEP_COUNT=14
+        STEP_COUNT=15
     fi
     progress_init $STEP_COUNT
 
@@ -188,6 +190,9 @@ main() {
 
     install_copyparty
     progress_update "Copyparty installed"
+
+    install_nerd_fonts
+    progress_update "Nerd Fonts installed"
 
     # Setup zsh-manager symlink
     print_section "ZSH-Manager Configuration"

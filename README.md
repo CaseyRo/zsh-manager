@@ -61,6 +61,7 @@ This will:
 - Install CLI tools via Cargo (bat, eza, ripgrep, fd, zoxide, topgrade)
 - Install Docker & Docker Compose (Linux only)
 - Install Node.js LTS and global npm packages
+- Install Nerd Fonts for terminal glyphs (desktop only)
 - Set up your `.zshrc` symlink
 
 **Raspberry Pi / ARM Linux**: Automatically detected! Uses APT for pre-built packages instead of compiling from source.
@@ -183,6 +184,7 @@ ZSH-Manager is open-source and available under the **MIT License**.
 - **Bootstrap script**: New `bootstrap.sh` for remote installation
 - **Raspberry Pi / ARM Linux support**: Automatic detection uses APT for pre-built packages instead of slow compilation
 - **Docker & Docker Compose**: Automatically installed on Linux (skipped on macOS)
+- **Nerd Fonts**: Installs FiraMono, JetBrainsMono, and Meslo Nerd Fonts on desktop systems (skipped on headless/servers). Customize in `install/packages.sh`
 
 #### Changes
 - **Cargo-first package installation**: Moved core CLI tools from Homebrew to Cargo for better cross-platform consistency:

@@ -72,3 +72,16 @@ NPM_GLOBAL_PACKAGES=(
     "pm2"
     "node-red"
 )
+
+# ============================================================================
+# Nerd Fonts (for terminal glyphs/icons)
+# ============================================================================
+# These provide special characters used by prompts like Powerlevel10k, btop, etc.
+# Only installed on desktop systems (macOS, Linux with display), skipped on headless.
+# Font names should match GitHub release names (without "NerdFont" suffix).
+# See: https://github.com/ryanoasis/nerd-fonts/releases
+NERD_FONTS=(
+    "FiraMono"       # clean, readable mono font
+    "JetBrainsMono"  # excellent for coding, ligature support
+    "Meslo"          # recommended by Powerlevel10k
+)

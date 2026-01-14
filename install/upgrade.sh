@@ -13,6 +13,7 @@ INSTALL_DIR="$SCRIPT_DIR"
 # Source utilities and package lists
 source "$INSTALL_DIR/utils.sh"
 source "$INSTALL_DIR/packages.sh"
+source "$INSTALL_DIR/nerd-fonts.sh"
 
 # Track if we installed anything
 INSTALLED_SOMETHING=false
@@ -151,6 +152,43 @@ upgrade_tailscale() {
     fi
 }
 
+upgrade_nerd_fonts() {
+    # Skip on headless systems
+    if ! has_display; then
+        return 0
+    fi
+
+    # Skip if no fonts configured
+    if [[ ${#NERD_FONTS[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS: Install via Homebrew cask
+        for font in "${NERD_FONTS[@]}"; do
+            if ! is_nerd_font_installed "$font"; then
+                INSTALLED_SOMETHING=true
+                local cask_name=$(get_brew_cask_name "$font")
+                echo -e "${SYMBOL_PACKAGE} Installing new font: ${BOLD}$font Nerd Font${RESET}"
+                brew install --cask "$cask_name" &>/dev/null && \
+                    echo -e "  ${GREEN}${SYMBOL_SUCCESS}${RESET} $font Nerd Font installed" || \
+                    echo -e "  ${RED}${SYMBOL_FAIL}${RESET} Failed to install $font Nerd Font"
+            fi
+        done
+    else
+        # Linux: Download from GitHub releases
+        for font in "${NERD_FONTS[@]}"; do
+            if ! is_nerd_font_installed "$font"; then
+                INSTALLED_SOMETHING=true
+                echo -e "${SYMBOL_PACKAGE} Installing new font: ${BOLD}$font Nerd Font${RESET}"
+                install_nerd_font_linux "$font" &>/dev/null && \
+                    echo -e "  ${GREEN}${SYMBOL_SUCCESS}${RESET} $font Nerd Font installed" || \
+                    echo -e "  ${RED}${SYMBOL_FAIL}${RESET} Failed to install $font Nerd Font"
+            fi
+        done
+    fi
+}
+
 # ============================================================================
 # Main Upgrade Function
 # ============================================================================
@@ -166,6 +204,7 @@ run_upgrade() {
     upgrade_cargo_packages
     upgrade_npm_packages
     upgrade_tailscale
+    upgrade_nerd_fonts
 
     if [[ "$INSTALLED_SOMETHING" == true ]]; then
         echo -e "${GREEN}${SYMBOL_SUCCESS}${RESET} Upgrade complete!"

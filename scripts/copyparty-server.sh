@@ -18,7 +18,7 @@ set -e
 if ! command -v copyparty &>/dev/null; then
     echo -e "\033[0;31m[error]\033[0m Copyparty not installed."
     echo "        Install with: pip install copyparty"
-    echo "        Or run: ./install-on-new-machine.sh"
+    echo "        Or run: ./install.sh"
     exit 1
 fi
 

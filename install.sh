@@ -8,12 +8,54 @@
 #   ███████╗███████║██║  ██║      ██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║
 #   ╚══════╝╚══════╝╚═╝  ╚═╝      ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
 #
-#   New Machine Setup Script
+#   ZSH-Manager Setup Script
 #   https://github.com/CaseyRo/zsh-manager
+#
+#   Usage: ./install.sh [OPTIONS]
+#
+#   Options:
+#     -v, --verbose    Show detailed output from all commands
+#     -h, --help       Show this help message
 #
 # ============================================================================
 
 set -e
+
+# ============================================================================
+# Argument Parsing
+# ============================================================================
+
+export VERBOSE=false
+
+show_help() {
+    echo "ZSH-Manager Setup Script"
+    echo ""
+    echo "Usage: ./install.sh [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  -v, --verbose    Show detailed output from all commands"
+    echo "  -h, --help       Show this help message"
+    echo ""
+    echo "Safe to re-run - already installed items will be skipped."
+    exit 0
+}
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            export VERBOSE=true
+            shift
+            ;;
+        -h|--help)
+            show_help
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information."
+            exit 1
+            ;;
+    esac
+done
 
 # Cleanup on exit/interrupt
 cleanup_on_exit() {
@@ -200,6 +242,7 @@ main() {
 
     if [[ -L "$ZSHRC_TARGET" ]] && [[ "$(readlink "$ZSHRC_TARGET")" == "$SCRIPT_DIR/.zshrc" ]]; then
         print_skip "zshrc symlink"
+        track_skipped "zshrc symlink"
     else
         if [[ -f "$ZSHRC_TARGET" ]] || [[ -L "$ZSHRC_TARGET" ]]; then
             print_step "Backing up existing .zshrc"
@@ -210,6 +253,7 @@ main() {
         print_step "Creating symlink"
         ln -s "$SCRIPT_DIR/.zshrc" "$ZSHRC_TARGET"
         print_success "~/.zshrc → $SCRIPT_DIR/.zshrc"
+        track_installed "zshrc symlink"
     fi
 
     progress_update "ZSH-Manager configured"

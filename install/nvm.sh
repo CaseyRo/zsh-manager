@@ -10,18 +10,25 @@ install_nvm() {
 
     if [[ -d "$NVM_DIR" ]] && [[ -s "$NVM_DIR/nvm.sh" ]]; then
         print_skip "NVM"
+        track_skipped "NVM"
         # Load nvm for this session
         source "$NVM_DIR/nvm.sh"
     else
         print_step "Installing NVM"
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+        if [[ "$VERBOSE" == true ]]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+        else
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh 2>/dev/null | bash &>/dev/null
+        fi
 
         # Load nvm for this session
         if [[ -s "$NVM_DIR/nvm.sh" ]]; then
             source "$NVM_DIR/nvm.sh"
             print_success "NVM installed"
+            track_installed "NVM"
         else
             print_error "NVM installation failed"
+            track_failed "NVM"
             return 1
         fi
     fi
@@ -38,6 +45,7 @@ install_node() {
 
     if ! command_exists nvm; then
         print_error "NVM not available, skipping Node.js installation"
+        track_failed "Node.js (NVM not available)"
         return 1
     fi
 
@@ -52,23 +60,33 @@ install_node() {
         if [[ "$current_version" != "$latest_lts" ]] && [[ -n "$latest_lts" ]]; then
             print_info "Newer LTS available: $latest_lts"
             print_step "Installing Node.js $latest_lts"
-            nvm install --lts &>/dev/null
-            nvm use --lts &>/dev/null
-            nvm alias default 'lts/*' &>/dev/null
+            run_cmd nvm install --lts
+            run_cmd nvm use --lts
+            run_cmd nvm alias default 'lts/*'
             print_success "Node.js updated to $latest_lts"
+            track_installed "Node.js $latest_lts"
         else
             print_success "Already on latest LTS"
+            track_skipped "Node.js ($current_version)"
         fi
     else
         print_step "Installing Node.js LTS"
-        nvm install --lts
-        nvm use --lts
-        nvm alias default 'lts/*'
+        if [[ "$VERBOSE" == true ]]; then
+            nvm install --lts
+            nvm use --lts
+            nvm alias default 'lts/*'
+        else
+            nvm install --lts &>/dev/null
+            nvm use --lts &>/dev/null
+            nvm alias default 'lts/*' &>/dev/null
+        fi
 
         if command_exists node; then
             print_success "Node.js $(node --version) installed"
+            track_installed "Node.js $(node --version)"
         else
             print_error "Node.js installation failed"
+            track_failed "Node.js"
             return 1
         fi
     fi
@@ -83,18 +101,24 @@ install_npm_global_packages() {
 
     if ! command_exists npm; then
         print_error "npm not available, skipping global packages"
+        for package in "${NPM_GLOBAL_PACKAGES[@]}"; do
+            track_failed "$package (npm not available)"
+        done
         return 1
     fi
 
     for package in "${NPM_GLOBAL_PACKAGES[@]}"; do
         if npm list -g "$package" &>/dev/null; then
             print_skip "$package"
+            track_skipped "$package"
         else
             print_package "$package"
             if run_with_spinner "Installing $package" npm install -g "$package"; then
                 print_success "$package installed"
+                track_installed "$package"
             else
                 print_error "Failed to install $package"
+                track_failed "$package"
             fi
         fi
     done

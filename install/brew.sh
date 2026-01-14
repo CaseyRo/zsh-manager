@@ -8,12 +8,17 @@ install_homebrew() {
 
     if command_exists brew; then
         print_skip "Homebrew"
+        track_skipped "Homebrew"
         print_step "Updating Homebrew"
         run_with_spinner "Updating Homebrew" brew update
         print_success "Homebrew updated"
     else
         print_step "Installing Homebrew"
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        if [[ "$VERBOSE" == true ]]; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        else
+            NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" &>/dev/null
+        fi
 
         # Add brew to PATH for this session
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -28,8 +33,10 @@ install_homebrew() {
 
         if command_exists brew; then
             print_success "Homebrew installed"
+            track_installed "Homebrew"
         else
             print_error "Homebrew installation failed"
+            track_failed "Homebrew"
             return 1
         fi
     fi
@@ -41,12 +48,15 @@ install_brew_packages() {
     for package in "${BREW_PACKAGES[@]}"; do
         if brew list "$package" &>/dev/null; then
             print_skip "$package"
+            track_skipped "$package"
         else
             print_package "$package"
             if run_with_spinner "Installing $package" brew install "$package"; then
                 print_success "$package installed"
+                track_installed "$package"
             else
                 print_error "Failed to install $package"
+                track_failed "$package"
             fi
         fi
     done
@@ -67,12 +77,15 @@ install_brew_casks() {
     for cask in "${BREW_CASKS[@]}"; do
         if brew list --cask "$cask" &>/dev/null; then
             print_skip "$cask"
+            track_skipped "$cask"
         else
             print_package "$cask"
             if run_with_spinner "Installing $cask" brew install --cask "$cask"; then
                 print_success "$cask installed"
+                track_installed "$cask"
             else
                 print_error "Failed to install $cask"
+                track_failed "$cask"
             fi
         fi
     done
@@ -93,12 +106,15 @@ install_brew_packages_linux() {
     for package in "${BREW_PACKAGES_LINUX[@]}"; do
         if brew list "$package" &>/dev/null; then
             print_skip "$package"
+            track_skipped "$package"
         else
             print_package "$package"
             if run_with_spinner "Installing $package" brew install "$package"; then
                 print_success "$package installed"
+                track_installed "$package"
             else
                 print_error "Failed to install $package"
+                track_failed "$package"
             fi
         fi
     done

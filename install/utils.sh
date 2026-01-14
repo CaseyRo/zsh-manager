@@ -2,6 +2,11 @@
 # CLI Styling Utilities
 # ============================================================================
 
+# Installation tracking
+declare -a INSTALLED_ITEMS=()
+declare -a SKIPPED_ITEMS=()
+declare -a FAILED_ITEMS=()
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -57,6 +62,21 @@ print_skip() {
     echo -e "  ${YELLOW}${SYMBOL_ARROW}${RESET} $1 ${DIM}(already installed)${RESET}"
 }
 
+# Track an installed item (for summary)
+track_installed() {
+    INSTALLED_ITEMS+=("$1")
+}
+
+# Track a skipped item (for summary)
+track_skipped() {
+    SKIPPED_ITEMS+=("$1")
+}
+
+# Track a failed item (for summary)
+track_failed() {
+    FAILED_ITEMS+=("$1")
+}
+
 # Print info message
 print_info() {
     echo -e "  ${BLUE}${SYMBOL_BULLET}${RESET} $1"
@@ -75,6 +95,26 @@ print_package() {
 # Check if command exists
 command_exists() {
     command -v "$1" &> /dev/null
+}
+
+# Run command, respecting VERBOSE flag
+# Usage: run_cmd <command> [args...]
+run_cmd() {
+    if [[ "$VERBOSE" == true ]]; then
+        "$@"
+    else
+        "$@" &>/dev/null
+    fi
+}
+
+# Redirect for commands - returns the redirect string
+# Usage: some_command $(quiet_redirect)
+quiet_redirect() {
+    if [[ "$VERBOSE" == true ]]; then
+        echo ""
+    else
+        echo "&>/dev/null"
+    fi
 }
 
 # ============================================================================
@@ -117,16 +157,22 @@ spinner() {
     printf "\r"
 }
 
-# Run command with spinner
+# Run command with spinner (or verbose output)
 run_with_spinner() {
     local message=$1
     shift
 
-    "$@" &>/dev/null &
-    local pid=$!
-    spinner $pid "$message"
-    wait $pid
-    return $?
+    if [[ "$VERBOSE" == true ]]; then
+        echo -e "  ${CYAN}${SYMBOL_ARROW}${RESET} $message..."
+        "$@"
+        return $?
+    else
+        "$@" &>/dev/null &
+        local pid=$!
+        spinner $pid "$message"
+        wait $pid
+        return $?
+    fi
 }
 
 # ============================================================================
@@ -238,6 +284,41 @@ print_summary() {
     echo -e "${BOLD}${GREEN}╔════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${BOLD}${GREEN}║${RESET}  ${SYMBOL_SPARKLE} ${BOLD}${WHITE}Setup Complete!${RESET} ${SYMBOL_SPARKLE}"
     echo -e "${BOLD}${GREEN}╚════════════════════════════════════════════════════════════╝${RESET}"
+
+    # Show what was installed
+    if [[ ${#INSTALLED_ITEMS[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "  ${GREEN}${SYMBOL_SUCCESS}${RESET} ${BOLD}Installed (${#INSTALLED_ITEMS[@]}):${RESET}"
+        for item in "${INSTALLED_ITEMS[@]}"; do
+            echo -e "     ${DIM}•${RESET} $item"
+        done
+    fi
+
+    # Show what was skipped
+    if [[ ${#SKIPPED_ITEMS[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "  ${YELLOW}${SYMBOL_ARROW}${RESET} ${BOLD}Already installed (${#SKIPPED_ITEMS[@]}):${RESET}"
+        for item in "${SKIPPED_ITEMS[@]}"; do
+            echo -e "     ${DIM}•${RESET} $item"
+        done
+    fi
+
+    # Show failures
+    if [[ ${#FAILED_ITEMS[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "  ${RED}${SYMBOL_FAIL}${RESET} ${BOLD}Failed (${#FAILED_ITEMS[@]}):${RESET}"
+        for item in "${FAILED_ITEMS[@]}"; do
+            echo -e "     ${DIM}•${RESET} $item"
+        done
+    fi
+
+    # Show summary counts
+    echo ""
+    local total=$((${#INSTALLED_ITEMS[@]} + ${#SKIPPED_ITEMS[@]} + ${#FAILED_ITEMS[@]}))
+    if [[ ${#INSTALLED_ITEMS[@]} -eq 0 ]] && [[ ${#FAILED_ITEMS[@]} -eq 0 ]]; then
+        echo -e "  ${DIM}Everything was already installed - nothing to do!${RESET}"
+    fi
+
     echo ""
     echo -e "  ${SYMBOL_ROCKET} ${BOLD}Next steps:${RESET}"
     echo -e "     1. Restart your terminal (or run: ${CYAN}source ~/.zshrc${RESET})"

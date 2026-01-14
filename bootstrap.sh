@@ -50,4 +50,4 @@ fi
 echo "  → Running setup..."
 echo ""
 cd "$INSTALL_DIR"
-exec bash ./install-on-new-machine.sh
+exec bash ./install.sh

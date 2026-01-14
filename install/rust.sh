@@ -8,12 +8,17 @@ install_rust() {
 
     if command_exists rustc && command_exists cargo; then
         print_skip "Rust/Cargo"
+        track_skipped "Rust"
         print_step "Updating Rust"
         run_with_spinner "Updating Rust" rustup update
         print_success "Rust updated"
     else
         print_step "Installing Rust via rustup"
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        if [[ "$VERBOSE" == true ]]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        else
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &>/dev/null
+        fi
 
         # Add cargo to PATH for this session
         if [[ -f "$HOME/.cargo/env" ]]; then
@@ -22,8 +27,10 @@ install_rust() {
 
         if command_exists cargo; then
             print_success "Rust installed"
+            track_installed "Rust"
         else
             print_error "Rust installation failed"
+            track_failed "Rust"
             return 1
         fi
     fi
@@ -45,15 +52,18 @@ install_cargo_packages() {
         current=$((current + 1))
         if cargo install --list | grep -q "^$package "; then
             print_skip "$package"
+            track_skipped "$package"
         else
             echo -e "  ${SYMBOL_PACKAGE} ${BOLD}[$current/$total]${RESET} Compiling ${BOLD}$package${RESET}..."
             echo -e "  ${DIM}─────────────────────────────────────────${RESET}"
             if cargo install "$package" 2>&1 | sed 's/^/    /'; then
                 echo -e "  ${DIM}─────────────────────────────────────────${RESET}"
                 print_success "$package installed"
+                track_installed "$package"
             else
                 echo -e "  ${DIM}─────────────────────────────────────────${RESET}"
                 print_error "Failed to install $package"
+                track_failed "$package"
             fi
             echo ""
         fi

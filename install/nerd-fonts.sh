@@ -117,12 +117,15 @@ install_nerd_fonts() {
             local cask_name=$(get_brew_cask_name "$font")
             if is_nerd_font_installed "$font"; then
                 print_skip "$font Nerd Font"
+                track_skipped "$font Nerd Font"
             else
                 print_package "$font Nerd Font"
                 if run_with_spinner "Installing $font Nerd Font" brew install --cask "$cask_name"; then
                     print_success "$font Nerd Font installed"
+                    track_installed "$font Nerd Font"
                 else
                     print_error "Failed to install $font Nerd Font"
+                    track_failed "$font Nerd Font"
                 fi
             fi
         done
@@ -131,12 +134,15 @@ install_nerd_fonts() {
         for font in "${NERD_FONTS[@]}"; do
             if is_nerd_font_installed "$font"; then
                 print_skip "$font Nerd Font"
+                track_skipped "$font Nerd Font"
             else
                 print_package "$font Nerd Font"
                 if run_with_spinner "Installing $font Nerd Font" install_nerd_font_linux "$font"; then
                     print_success "$font Nerd Font installed"
+                    track_installed "$font Nerd Font"
                 else
                     print_error "Failed to install $font Nerd Font"
+                    track_failed "$font Nerd Font"
                 fi
             fi
         done

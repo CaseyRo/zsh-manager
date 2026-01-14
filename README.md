@@ -22,7 +22,7 @@
 zsh-manager/
 ├── README.md                           # Documentation
 ├── bootstrap.sh                        # One-liner remote install script
-├── install-on-new-machine.sh           # Full setup script with progress bar
+├── install.sh                          # Full setup script with progress bar
 ├── run-to-symlink.sh                   # Quick symlink-only setup
 ├── .zshrc                              # Main ZSH configuration file
 ├── install/                            # Installation modules
@@ -77,7 +77,7 @@ git clone git@github.com:CaseyRo/zsh-manager.git ~/.zsh-manager
 #### 2️⃣ Run the Setup Script
 ```bash
 cd ~/.zsh-manager
-./install-on-new-machine.sh
+./install.sh
 ```
 
 #### 3️⃣ Customize Your Configuration

@@ -9,6 +9,7 @@
 alias cat="bat"
 alias top="htop"
 alias docker-compose="docker compose"
+alias dm="dockmate"
 
 # Docker shortcuts
 alias dcdcu="docker-compose down && docker-compose up -d"

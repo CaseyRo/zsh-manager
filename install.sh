@@ -105,6 +105,7 @@ source "$INSTALL_DIR/uv.sh"
 source "$INSTALL_DIR/oh-my-zsh.sh"
 source "$INSTALL_DIR/tailscale.sh"
 source "$INSTALL_DIR/copyparty.sh"
+source "$INSTALL_DIR/dockmate.sh"
 source "$INSTALL_DIR/nerd-fonts.sh"
 source "$INSTALL_DIR/git-confirmer.sh"
 
@@ -115,6 +116,7 @@ source "$INSTALL_DIR/git-confirmer.sh"
 main() {
     ui_init "$UI_MODE" "$UI_THEME"
     ui_clear
+    log_init
 
     print_header "ZSH-Manager: New Machine Setup"
     if [[ "$UI_WARN_GUM_MISSING" == true ]]; then
@@ -145,6 +147,27 @@ main() {
         fi
     fi
     ui_set_context "$PLATFORM_NAME"
+    log_line "Platform: $PLATFORM_NAME"
+    log_kv "OSTYPE" "$OSTYPE"
+    log_kv "Architecture" "$(uname -m)"
+    if [[ -f /etc/os-release ]]; then
+        log_line "OS Release:"
+        log_kv "PRETTY_NAME" "${PRETTY_NAME:-unknown}"
+        log_kv "ID" "${ID:-unknown}"
+        log_kv "ID_LIKE" "${ID_LIKE:-unknown}"
+    fi
+    if command_exists sysctl; then
+        log_kv "CPU" "$(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo unknown)"
+        log_kv "MemoryBytes" "$(sysctl -n hw.memsize 2>/dev/null || echo unknown)"
+    elif [[ -f /proc/cpuinfo ]]; then
+        log_kv "CPU" "$(awk -F': ' '/model name/ {print $2; exit}' /proc/cpuinfo)"
+    fi
+    if [[ -f /proc/meminfo ]]; then
+        log_kv "MemoryKB" "$(awk -F': ' '/MemTotal/ {print $2; exit}' /proc/meminfo)"
+    fi
+    log_kv "InstallMethod" "$([[ "$USE_APT" == true ]] && echo apt || echo brew)"
+    log_kv "UI_MODE" "$UI_MODE"
+    log_kv "UI_THEME" "$UI_THEME"
 
     echo -e "  ${DIM}This script will install:${RESET}"
     if [[ "$USE_APT" == true ]]; then
@@ -153,6 +176,7 @@ main() {
         echo -e "  ${SYMBOL_BULLET} Docker & Docker Compose"
     else
         echo -e "  ${SYMBOL_BULLET} Homebrew + CLI tools (git, gh, bat, eza, etc.)"
+        echo -e "  ${SYMBOL_BULLET} DockMate (Docker management CLI)"
         echo -e "  ${SYMBOL_BULLET} Rust & Cargo"
         if [[ "$IS_MACOS" == false ]]; then
             echo -e "  ${SYMBOL_BULLET} Docker & Docker Compose"
@@ -197,11 +221,15 @@ main() {
     # Calculate step count based on platform
     # Base: 13 steps (rust, uv, python, nvm, node, npm, omz, plugins, tailscale, copyparty, nerd-fonts, symlink, done)
     # APT: +3 (apt repos, apt packages, docker) = 16
-    # Brew macOS: +3 (brew, packages, casks) = 16
-    # Brew Linux: +4 (brew, packages, casks, docker) = 17
+    # Brew macOS: +5 (brew, taps, packages, dockmate, casks) = 18
+    # Brew Linux: +6 (brew, taps, packages, dockmate, casks, docker) = 19
     local STEP_COUNT=16
     if [[ "$IS_MACOS" == false ]] && [[ "$USE_APT" == false ]]; then
         STEP_COUNT=17
+    fi
+    if [[ "$USE_APT" == false ]]; then
+        STEP_COUNT=$((STEP_COUNT + 1))
+        STEP_COUNT=$((STEP_COUNT + 1))
     fi
     if [[ "$IS_MACOS" == true ]] || [[ "$IS_UBUNTU" == true ]]; then
         STEP_COUNT=$((STEP_COUNT + 1))
@@ -228,8 +256,14 @@ main() {
         install_homebrew
         progress_update "Homebrew installed"
 
+        install_brew_taps
+        progress_update "Brew taps configured"
+
         install_brew_packages
         progress_update "Brew packages installed"
+
+        install_dockmate
+        progress_update "DockMate installed"
 
         install_brew_casks
         progress_update "Brew casks installed"

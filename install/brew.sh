@@ -42,6 +42,30 @@ install_homebrew() {
     fi
 }
 
+install_brew_taps() {
+    if [[ ${#BREW_TAPS[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    print_section "Brew Taps"
+
+    for tap in "${BREW_TAPS[@]}"; do
+        if brew tap | grep -qx "$tap"; then
+            print_skip "$tap"
+            track_skipped "$tap"
+        else
+            print_package "$tap"
+            if run_with_spinner "Tapping $tap" brew tap "$tap"; then
+                print_success "$tap tapped"
+                track_installed "$tap"
+            else
+                print_error "Failed to tap $tap"
+                track_failed "$tap"
+            fi
+        fi
+    done
+}
+
 install_brew_packages() {
     print_section "Brew Packages"
 

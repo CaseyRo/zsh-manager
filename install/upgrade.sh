@@ -23,6 +23,26 @@ INSTALLED_SOMETHING=false
 # Quiet Installation Functions
 # ============================================================================
 
+upgrade_brew_taps() {
+    if ! command_exists brew; then
+        return 0
+    fi
+
+    if [[ ${#BREW_TAPS[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    for tap in "${BREW_TAPS[@]}"; do
+        if ! brew tap | grep -qx "$tap"; then
+            INSTALLED_SOMETHING=true
+            echo -e "${SYMBOL_PACKAGE} Tapping new repository: ${BOLD}$tap${RESET}"
+            brew tap "$tap" &>/dev/null && \
+                echo -e "  ${GREEN}${SYMBOL_SUCCESS}${RESET} $tap tapped" || \
+                echo -e "  ${RED}${SYMBOL_FAIL}${RESET} Failed to tap $tap"
+        fi
+    done
+}
+
 upgrade_brew_packages() {
     if ! command_exists brew; then
         return 0
@@ -62,6 +82,37 @@ upgrade_brew_packages() {
                     echo -e "  ${RED}${SYMBOL_FAIL}${RESET} Failed to install $cask"
             fi
         done
+    fi
+}
+
+upgrade_dockmate() {
+    if command_exists dockmate; then
+        return 0
+    fi
+
+    local is_ubuntu=false
+    if [[ "$OSTYPE" == "linux-gnu"* ]] && [[ -f /etc/os-release ]]; then
+        source /etc/os-release
+        if [[ "$ID" == "ubuntu" || "$ID_LIKE" == *"ubuntu"* ]]; then
+            is_ubuntu=true
+        fi
+    fi
+
+    if [[ "$OSTYPE" == "darwin"* ]] || [[ "$is_ubuntu" == false ]]; then
+        if ! command_exists brew; then
+            return 0
+        fi
+        INSTALLED_SOMETHING=true
+        echo -e "${SYMBOL_PACKAGE} Installing new package: ${BOLD}dockmate${RESET}"
+        brew install "shubh-io/tap/dockmate" &>/dev/null && \
+            echo -e "  ${GREEN}${SYMBOL_SUCCESS}${RESET} DockMate installed" || \
+            echo -e "  ${RED}${SYMBOL_FAIL}${RESET} Failed to install DockMate"
+    else
+        INSTALLED_SOMETHING=true
+        echo -e "${SYMBOL_PACKAGE} Installing new package: ${BOLD}dockmate${RESET}"
+        sh -c "curl -fsSL https://raw.githubusercontent.com/shubh-io/DockMate/main/install.sh | sh" &>/dev/null && \
+            echo -e "  ${GREEN}${SYMBOL_SUCCESS}${RESET} DockMate installed" || \
+            echo -e "  ${RED}${SYMBOL_FAIL}${RESET} Failed to install DockMate"
     fi
 }
 
@@ -199,7 +250,9 @@ run_upgrade() {
     if should_use_apt; then
         upgrade_apt_packages
     else
+        upgrade_brew_taps
         upgrade_brew_packages
+        upgrade_dockmate
     fi
 
     upgrade_cargo_packages

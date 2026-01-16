@@ -6,6 +6,7 @@
 declare -a INSTALLED_ITEMS=()
 declare -a SKIPPED_ITEMS=()
 declare -a FAILED_ITEMS=()
+LOG_FILE=""
 
 # Base colors (themeable)
 COLOR_RED=$'\033[0;31m'
@@ -95,20 +96,65 @@ print_skip() {
     echo -e "  ${YELLOW}${SYMBOL_ARROW}${RESET} $1 ${DIM}(already installed)${RESET}"
 }
 
+# ============================================================================
+# Logging
+# ============================================================================
+
+log_line() {
+    if [[ -n "$LOG_FILE" ]]; then
+        printf "%s\n" "$1" >> "$LOG_FILE"
+    fi
+}
+
+log_kv() {
+    log_line "$1: $2"
+}
+
+log_init() {
+    local base_dir="${XDG_STATE_HOME:-$HOME/.local/state}/zsh-manager"
+    local ts
+
+    mkdir -p "$base_dir"
+    # Keep only the most recent logs to avoid unbounded growth.
+    local keep_logs=5
+    local old_logs=()
+    local old_count
+    local remove_count
+
+    mapfile -t old_logs < <(ls -1t "$base_dir"/install-*.log 2>/dev/null)
+    old_count=${#old_logs[@]}
+    if (( old_count > keep_logs )); then
+        remove_count=$((old_count - keep_logs))
+        for ((i=old_count-1; i>=keep_logs; i--)); do
+            rm -f -- "${old_logs[$i]}"
+        done
+        log_line "Log retention: removed $remove_count old log(s)"
+    fi
+
+    ts=$(date +%Y%m%d_%H%M%S)
+    LOG_FILE="$base_dir/install-$ts.log"
+
+    printf "ZSH-Manager install log\n" > "$LOG_FILE"
+    printf "Started: %s\n\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG_FILE"
+}
+
 # Track an installed item (for summary)
 track_installed() {
     INSTALLED_ITEMS+=("$1")
+    log_line "INSTALLED: $1"
 }
 
 # Track a skipped item (for summary)
 track_skipped() {
     SKIPPED_ITEMS+=("$1")
+    log_line "SKIPPED: $1"
 }
 
 # Track a failed item (for summary)
 track_failed() {
     FAILED_ITEMS+=("$1")
     ui_set_error "$1"
+    log_line "FAILED: $1"
 }
 
 # Print info message
@@ -687,6 +733,8 @@ print_summary() {
 
     echo ""
     echo -e "  ${DIM}Summary:${RESET} Installed ${installed_count}, Skipped ${skipped_count}, Failed ${failed_count}, Elapsed ${elapsed}"
+    log_line ""
+    log_line "Summary: Installed ${installed_count}, Skipped ${skipped_count}, Failed ${failed_count}, Elapsed ${elapsed}"
 
     # Show what was installed
     if [[ $installed_count -gt 0 ]]; then
@@ -723,6 +771,9 @@ print_summary() {
     fi
 
     echo ""
+    if [[ -n "$LOG_FILE" ]]; then
+        echo -e "  ${DIM}Install log:${RESET} ${CYAN}$LOG_FILE${RESET}"
+    fi
     echo -e "  ${SYMBOL_ROCKET} ${BOLD}Next steps:${RESET}"
     echo -e "     1. Restart your terminal (or run: ${CYAN}source ~/.zshrc${RESET})"
     echo -e "     2. Enjoy your new setup!"

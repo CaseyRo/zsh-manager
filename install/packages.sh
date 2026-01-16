@@ -4,12 +4,18 @@
 # Edit these arrays to customize what gets installed on new machines.
 # ============================================================================
 
+# Homebrew taps (additional repositories)
+BREW_TAPS=(
+    "shubh-io/tap"
+)
+
 # Homebrew packages (installed via brew install)
 # Only packages not available via cargo or that work better via brew
 BREW_PACKAGES=(
     "zsh"
     "git"        # version control
     "gh"         # GitHub CLI
+    "1password-cli" # 1Password CLI
     "fzf"        # fuzzy finder (keybindings install better via brew)
     "byobu"      # terminal multiplexer
     "fastfetch"  # fast system info (faster alternative to hyfetch)
